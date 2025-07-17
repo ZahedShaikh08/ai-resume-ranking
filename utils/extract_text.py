@@ -1,4 +1,4 @@
-import fitz  # PyMuPDF
+from pypdf import PdfReader
 import docx
 import os
 import re
@@ -27,9 +27,9 @@ def extract_text(filepath):
 def extract_pdf(filepath):
     text = ""
     try:
-        with fitz.open(filepath) as doc:
-            for page in doc:
-                text += page.get_text()
+        reader = PdfReader(filepath)
+        for page in reader.pages:
+            text += page.extract_text() or ""
     except Exception as e:
         logging.error(f"PDF extraction error: {str(e)}")
     return clean_text(text)
