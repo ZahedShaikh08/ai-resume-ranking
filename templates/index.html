@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-RRS | Resume Ranking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="bubble bubble-1"></div>
+    <div class="bubble bubble-2"></div>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-file-alt"></i> AI Resume Ranking System</h1>
+            <p>Enter a job description and upload resumes to get AI-powered ranking</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash">Processing completed successfully! View your results below.</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" id="upload-form">
+            <div class="form-group">
+                <label for="jd_text"><i class="fas fa-file-contract"></i> Job Description:</label>
+                <textarea 
+                    id="jd_text" 
+                    name="jd_text" 
+                    rows="6" 
+                    placeholder="Paste job description here..."
+                    required>{{ jd_text if jd_text else '' }}</textarea>
+                <div class="file-info">Enter the full job description text</div>
+            </div>
+
+<div class="form-group">
+    <label for="resumes"><i class="fas fa-file-pdf"></i> Resumes:</label>
+    
+    <!-- Drag & Drop Area -->
+    <div class="drag-drop-area" id="dragDropArea">
+        <div class="upload-icon">
+            <i class="fa fa-upload fa-3x"></i>
+        </div>
+        <p>Drag & drop files here or <span class="browse-link">browse</span></p>
+        <input type="file" name="resumes" id="resumes" multiple accept=".pdf,.docx,.doc,.txt" required>
+    </div>
+    
+    <div class="file-info">Multiple PDF/DOCX/DOC/TXT files (Max 16MB each)</div>
+    
+    <!-- Selected files list -->
+    <div class="file-list" id="fileList"></div>
+</div>
+            
+            <button type="submit" id="submit-btn">
+                <i class="fas fa-ranking-star"></i> Rank Resumes
+            </button>
+        </form>
+
+        {% if results %}
+            <div class="results-container">
+                <div class="results-header">
+                    <h2><i class="fas fa-list-ol"></i> Ranked Resumes</h2>
+                    <div class="summary">
+                        <span>Resumes: {{ resume_count }}</span>
+                    </div>
+                </div>
+                
+                <div class="results-list">
+                    {% for r in results %}
+                    <div class="result-item">
+                        <div class="rank-badge">#{{ loop.index }}</div>
+                        <div class="result-content">
+                            <h3>{{ r.name }}</h3>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="--width: {{ r.score }}%;">
+                                    <span>{{ r.score }}% Match</span>
+                                </div>
+                            </div>
+                            <div class="result-meta">
+                                <span class="score">{{ r.score }}%</span>
+                                <a href="#" class="preview-link" data-path="{{ r.path }}">
+                                    <i class="fas fa-eye"></i> Preview
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+        <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="preview-container"></div>
+        </div>
+    </div>
+
+    <script>        
+    // Show spinner during processing
+        document.getElementById('upload-form').addEventListener('submit', function() {
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        });
+        
+        // Preview functionality
+        const modal = document.getElementById('preview-modal');
+        const previewContainer = document.getElementById('preview-container');
+        
+        document.querySelectorAll('.preview-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filePath = this.getAttribute('data-path');
+                
+                fetch('/preview?path=' + encodeURIComponent(filePath))
+                    .then(response => response.text())
+                    .then(data => {
+                        previewContainer.innerHTML = data;
+                        modal.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Preview error:', error);
+                        previewContainer.innerHTML = '<p>Error loading preview</p>';
+                        modal.style.display = 'block';
+                    });
+            });
+        });
+        
+        // Close modal
+        document.querySelector('.close').addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    const dragDropArea = document.getElementById('dragDropArea');
+    const fileInput = document.getElementById('resumes');
+    const fileList = document.getElementById('fileList');
+    const browseLink = document.querySelector('.browse-link');
+    
+    // Click on browse link
+    browseLink.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+    });
+    
+    // Click anywhere in drop area
+    dragDropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', () => {
+        updateFileList(fileInput.files);
+    });
+    
+    // Drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, () => {
+            dragDropArea.classList.add('dragover');
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, () => {
+            dragDropArea.classList.remove('dragover');
+        }, false);
+    });
+    
+    dragDropArea.addEventListener('drop', handleDrop, false);
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        fileInput.files = dt.files;
+        updateFileList(dt.files);
+    }
+    
+    function updateFileList(files) {
+        fileList.innerHTML = '';
+        
+        if (files.length === 0) {
+            return;
+        }
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            // Get file icon
+            let fileIcon = 'fa-file';
+            if (file.type.includes('pdf')) {
+                fileIcon = 'fa-file-pdf';
+            } else if (file.type.includes('word') || 
+                      file.name.endsWith('.docx') || 
+                      file.name.endsWith('.doc')) {
+                fileIcon = 'fa-file-word';
+            } else if (file.type.includes('text') || 
+                      file.name.endsWith('.txt')) {
+                fileIcon = 'fa-file-alt';
+            }
+            
+            // Format file size
+            const fileSize = formatFileSize(file.size);
+            
+            fileItem.innerHTML = `
+                <i class="fas ${fileIcon} file-icon"></i>
+                <div class="file-details">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${fileSize}</div>
+                </div>
+                <button class="remove-btn" data-index="${i}">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            fileList.appendChild(fileItem);
+        }
+        
+        // Add remove functionality
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.getAttribute('data-index'));
+                removeFile(index);
+            });
+        });
+    }
+    
+    function removeFile(index) {
+        const dt = new DataTransfer();
+        const files = fileInput.files;
+        
+        // Add all files except the one to remove
+        for (let i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+        
+        fileInput.files = dt.files;
+        updateFileList(fileInput.files);
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+});
+    
+    </script>
+</body>
+</html>
