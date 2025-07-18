@@ -5,9 +5,9 @@
       "use": "@vercel/python",
       "config": {
         "runtime": "python3.10",
+        "installCommand": "pip install -r requirements.txt && python -c \"import nltk; nltk.download('stopwords')\"",
         "maxLambdaSize": "15mb",
-        "includeFiles": ["static/**", "utils/**"],
-        "installCommand": "pip install -r requirements.txt && python -c \"import nltk; nltk.download('stopwords')\""
+        "includeFiles": "static/**"
       }
     }
   ],

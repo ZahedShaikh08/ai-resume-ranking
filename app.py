@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory
 import os
 import shutil
+import uuid
+from werkzeug.utils import secure_filename
 from utils.extract_text import extract_text
 from utils.rank_resumes import rank_resumes
 from utils.file_validation import allowed_file, clean_filename
-from werkzeug.utils import secure_filename
-import uuid
-import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)

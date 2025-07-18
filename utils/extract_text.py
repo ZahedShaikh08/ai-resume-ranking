@@ -5,6 +5,7 @@ import re
 import logging
 import subprocess
 import sys
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 
@@ -49,10 +50,10 @@ def extract_doc(filepath):
         # Try using antiword if available
         if shutil.which('antiword'):
             result = subprocess.run(
-                ['antiword', filepath],
-                capture_output=True,
-                text=True,
-                timeout=10
+            ['antiword', filepath],
+            capture_output=True,
+            text=True,
+            timeout=10
             )
             if result.returncode == 0:
                 return clean_text(result.stdout)
