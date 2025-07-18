@@ -6,8 +6,11 @@
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
-        "includeFiles": ["api/requirements.txt"],
-        "runtime": "python3.12"
+        "includeFiles": [
+          "api/requirements.txt",
+          "api/wheels/**"
+        ],
+        "runtime": "python3.11"
       }
     },
     { "src": "static/**",    "use": "@vercel/static" },
