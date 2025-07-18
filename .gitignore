@@ -1,5 +1,5 @@
 .venv/
 .vercel/
 __pycache__/
-api/
+#api/
 .vercelignore
