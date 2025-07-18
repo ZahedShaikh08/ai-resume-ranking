@@ -5,21 +5,18 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
+        "runtime": "python3.11",
         "maxLambdaSize": "50mb",
-        "includeFiles": [
-          "api/requirements.txt",
-          "api/wheels/**"
-        ],
-        "runtime": "python3.11"
+        "includeFiles": ["api/requirements.txt"]
       }
     },
-    { "src": "static/**",    "use": "@vercel/static" },
+    { "src": "static/**", "use": "@vercel/static" },
     { "src": "templates/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/static/(.*)",    "dest": "/static/$1" },
+    { "src": "/static/(.*)", "dest": "/static/$1" },
     { "src": "/templates/(.*)", "dest": "/templates/$1" },
-    { "src": "/api/(.*)",       "dest": "/api/index.py" },
-    { "src": "/(.*)",           "dest": "/api/index.py" }
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/api/index.py" }
   ]
 }
