@@ -94,3 +94,18 @@ def index():
 
 if __name__ == "__main__":
     app.run(port=5002, debug=False)
+
+@app.route("/preview")
+def preview():
+    path = request.args.get('path', '')
+    
+    # Security check
+    if not path.startswith(app.config['UPLOAD_FOLDER']):
+        return "Unauthorized", 403
+        
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+        return f"<pre>{content}</pre>"
+    except Exception as e:
+        return f"Error loading file: {str(e)}", 500

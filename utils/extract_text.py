@@ -3,7 +3,8 @@ import docx
 import os
 import re
 import logging
-import comtypes.client
+import subprocess
+import sys
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,34 +44,27 @@ def extract_docx(filepath):
         return ""
 
 def extract_doc(filepath):
-    """Convert .doc to .docx using Word COM interface and extract text"""
+    """Platform-agnostic .doc extraction"""
     try:
-        # Generate temporary file paths
-        docx_path = os.path.splitext(filepath)[0] + ".docx"
+        # Try using antiword if available
+        if shutil.which('antiword'):
+            result = subprocess.run(
+                ['antiword', filepath],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                return clean_text(result.stdout)
         
-        # Convert using Word COM interface
-        word = comtypes.client.CreateObject("Word.Application")
-        word.Visible = False
-        doc = word.Documents.Open(os.path.abspath(filepath))
-        doc.SaveAs2(os.path.abspath(docx_path), FileFormat=16)  # 16 = wdFormatDOCX
-        doc.Close()
-        word.Quit()
-        
-        # Extract text from converted docx
-        text = extract_docx(docx_path)
-        
-        # Cleanup temporary file
-        os.remove(docx_path)
-        return text
+        # Fallback to text extraction
+        logging.warning("antiword not available, using fallback text extraction")
+        with open(filepath, 'rb') as f:
+            content = f.read().decode('ascii', errors='ignore')
+            return clean_text(content)
     except Exception as e:
         logging.error(f"DOC extraction error: {str(e)}")
         return ""
-    finally:
-        # Ensure Word process is closed
-        try:
-            word.Quit()
-        except:
-            pass
 
 def clean_text(text):
     # Remove excessive whitespace and non-printable characters
