@@ -1,11 +1,30 @@
-# .vercelignore
+# Already covered
 .venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.log
+
+# Dot‑env / local config
+.env
+
+# Database files
 *.db
 *.sqlite3
-.env
+
+# Node artifacts (if you ever add front-end dependencies)
 node_modules/
-*.log
+
+# Vercel build outputs (they’ll be re‑generated)
+.vercel/
+
+# Uploads folder (you don’t want user‑uploaded PDFs in your repo)
+uploads/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Test caches
+.pytest_cache/
