@@ -6,6 +6,8 @@ from werkzeug.utils import secure_filename
 from utils.extract_text import extract_text
 from utils.rank_resumes import rank_resumes
 from utils.file_validation import allowed_file, clean_filename
+import sys
+print("Python Path:", sys.path)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
